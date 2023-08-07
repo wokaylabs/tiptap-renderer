@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@wokaylabs/tiptap-react-render.svg?style=flat)](https://www.npmjs.com/package/@wokaylabs/tiptap-react-render)
 
-A typescript lightweight library for rendering TipTap JSON payloads in React or React like Environment. Zero Depedencies.
+A lightweight typescript library for rendering TipTap JSON payloads in React or React like Environment. Zero Depedencies.
 
 # TipTap React Render
 
