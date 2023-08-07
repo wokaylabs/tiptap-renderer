@@ -1,9 +1,2 @@
-import {
-  TipTapRender,
-  NodeHandler,
-  NodeHandlers,
-  NodeProps,
-  TipTapNode
-} from "./tip-tap-render";
-
-export { NodeHandler, NodeHandlers, NodeProps, TipTapNode, TipTapRender };
+export type { TipTapMarkHandlers, TipTapNodeHandlers, TipTapRenderHandlers } from './interfaces';
+export * from './tip-tap-render';

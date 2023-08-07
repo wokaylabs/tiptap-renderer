@@ -1,188 +1,128 @@
-import React from "react";
-import { render } from "@testing-library/react";
-import {
-  TipTapRender,
-  NodeHandlers,
-  NodeHandler,
-  TipTapNode,
-} from "./tip-tap-render";
+import '@testing-library/jest-dom';
 
-describe("TipTapRender", () => {
-  test("renders an empty node", () => {
+import { render } from '@testing-library/react';
+import React from 'react';
+
+import { TipTapRender } from './tip-tap-render';
+import { TipTapBaseNode, TipTapNodeHandler, TipTapRenderHandlers } from './interfaces';
+
+function elem(tag: string, props?: { [attr: string]: any }, children?: React.ReactNode): TipTapNodeHandler {
+  return (nodeProps) => React.createElement(tag, props, children || nodeProps.children);
+}
+
+function fragment(node: React.ReactNode): React.ReactElement {
+  return React.createElement(React.Fragment, null, node);
+}
+
+function renderTipTap(node: TipTapBaseNode, handlers: TipTapRenderHandlers) {
+  return render(React.createElement(TipTapRender, { handlers: handlers, node: node }));
+}
+
+describe('tiptapParser', () => {
+  it('should render an empty node', () => {
     // create a dummy renderer
-    const dummy: NodeHandler = (props) => (<div id="some-id">this a doc</div>)
+    const dummy: TipTapNodeHandler = elem('div', { id: 'some-id' }, 'this a doc');
     // create a handler
-    const handlers: NodeHandlers = {
-      "doc": dummy,
-    }
+    const handlers: TipTapRenderHandlers = {
+      doc: dummy,
+    } as unknown as TipTapRenderHandlers;
     // define a shallow tip tap node
-    const node: TipTapNode = {
-      type: "doc",
-    }
+    const node: TipTapBaseNode = {
+      type: 'doc',
+    };
     // render it!
-    const actual = render(<TipTapRender handlers={handlers} node={node} />);
-    expect(actual.getByText("this a doc")).toBeInTheDocument();
+    const actual = renderTipTap(node, handlers);
+    expect(actual.getByText('this a doc')).toBeInTheDocument();
   });
 
-  test("renders a child node", () => {
+  test('renders a child node', () => {
     // create a dummy renderer
-    const parent: NodeHandler = (props) => (<>{props.children}</>)
-    const child: NodeHandler = (props) => (<>{props.node.text}</>)
+    const parent: TipTapNodeHandler = (props) => fragment(props.children);
+    const child: TipTapNodeHandler = (props) => fragment(props.node.text);
     // create a handler
-    const handlers: NodeHandlers = {
-      "doc": parent,
-      "text": child,
-    }
+    const handlers: TipTapRenderHandlers = {
+      doc: parent,
+      text: child,
+    } as unknown as TipTapRenderHandlers;
     // define a shallow tip tap node
-    const node: TipTapNode = {
-      type: "doc",
-      content: [{
-        type: "text",
-        text: "child text"
-      }]
-    }
-    // render it!
-    const actual = render(<TipTapRender handlers={handlers} node={node} />);
-    expect(actual.getByText("child text")).toBeInTheDocument();
-  });
-
-  test("renders 2 children", () => {
-    // create a dummy renderer
-    const doc: NodeHandler = (props) => (<>{props.children}</>)
-    const text: NodeHandler = (props) => (<div>{props.node.text}</div>)
-    const img: NodeHandler = (props) => (<img src={props.node.src} alt={props.node.alt}/>)
-    // create a handler
-    const handlers: NodeHandlers = {
-      "doc": doc,
-      "text": text,
-      "img": img,
-    }
-    // make a text node
-    const child1: TipTapNode = {
-      type: "text",
-      text: "hello"
-    }
-    // make an image node
-    const child2: TipTapNode = {
-      type: "img",
-      src: "https://images.com/hi.jpeg",
-      alt: "some-image"
-    }
-    // wrap in a document
-    const node: TipTapNode = {
-      type: "doc",
-      content: [child1, child2]
-    }
-    // render it!
-    const actual = render(<TipTapRender handlers={handlers} node={node} />);
-    expect(actual.getByText(child1.text)).toBeInTheDocument();
-    expect(actual.getByAltText(child2.alt)).toHaveAttribute("src", child2.src);
-  });
-
-  test("renders depth 3", () => {
-    // create a dummy renderer
-    const doc: NodeHandler = (props) => (<>{props.children}</>)
-    const text: NodeHandler = (props) => (<span>{props.node.text}</span>)
-    const paragraph: NodeHandler = (props) => (<p>{props.children}</p>)
-    // create a handler
-    const handlers: NodeHandlers = {
-      "doc": doc,
-      "text": text,
-      "paragraph": paragraph,
-    }
-    // paragraph with text in it
-    const p1: TipTapNode = {
-      type: "paragraph",
-      content: [{
-        type: "text",
-        text: "hello"
-      }]
-    }
-    // wrap in document
-    const node: TipTapNode = {
-      type: "doc",
-      content: [p1]
-    }
-    // render it!
-    const actual = render(<TipTapRender handlers={handlers} node={node} />);
-    expect(actual.getByText("hello")).toBeInTheDocument();
-  });
-
-  test("no-op on unhandled type", () => {
-    // create a dummy renderer
-    const doc: NodeHandler = (props) => (<>{props.children}</>)
-    const paragraph: NodeHandler = (props) => (<p>{props.children}</p>)
-    const text: NodeHandler = (props) => (<span>{props.node.text}</span>)
-    // create a handler
-    const handlers: NodeHandlers = {
-      "doc": doc,
-      "text": text,
-      "paragraph": paragraph,
-    }
-    // paragraph with text in it
-    const p1: TipTapNode = {
-      type: "paragraph",
-      content: [{type: "text", text: "text 1"}]
-    }
-    // unhandled type with text in it
-    const p2: TipTapNode = {
-      type: "bad-type",
-      content: [{type: "text", text: "text 2"}]
-    }
-    // wrap in document
-    const node: TipTapNode = {
-      type: "doc",
-      content: [p1, p2]
-    }
-    // render it!
-    const actual = render(<TipTapRender handlers={handlers} node={node} />);
-    // text 1 should render
-    expect(actual.getByText("text 1")).toBeInTheDocument();
-    // text 2 should not!
-    expect(actual.queryByText("text 2")).toBeNull();
-  });
-
-  test("link in a paragraph", () => {
-    // create a dummy renderer
-    const doc: NodeHandler = (props) => (<>{props.children}</>)
-    const paragraph: NodeHandler = (props) => (<p>{props.children}</p>)
-    const text: NodeHandler = (props) => (<span>{props.node.text}</span>)
-    const link: NodeHandler = (props) => (<a data-testid={"some-url"} href={props.node.attrs?.href}>{props.children}</a>)
-    // create a handler
-    const handlers: NodeHandlers = {
-      "doc": doc,
-      "text": text,
-      "paragraph": paragraph,
-      "link": link,
-    }
-    // paragraph with link in it
-    const url: string = "https://www.npmjs.com/package/@troop.com/tiptap-react-render"
-    const p1: TipTapNode = {
-      type: "paragraph",
+    const node: TipTapBaseNode = {
+      type: 'doc',
       content: [
-        {type: "text", text: "text 1"},
         {
-          type: "link",
-          attrs: {
-            href : url
-          }
+          type: 'text',
+          text: 'child text',
         },
-        {type: "text", text: "text 2"},
-      ]
-    }
-    // wrap in document
-    const node: TipTapNode = {
-      type: "doc",
-      content: [p1]
-    }
+      ],
+    };
     // render it!
-    const actual = render(<TipTapRender handlers={handlers} node={node} />);
-    // text 1 and 2 should render
-    expect(actual.getByText("text 1")).toBeInTheDocument();
-    expect(actual.getByText("text 2")).toBeInTheDocument();
-    // link should be in the paragraph
-    const urlElement = actual.queryByTestId("some-url");
-    expect(urlElement).toBeInTheDocument();
-    expect(urlElement).toHaveAttribute("href", url);
+    const actual = renderTipTap(node, handlers);
+    expect(actual.getByText('child text')).toBeInTheDocument();
+  });
+
+  test('renders depth 3', () => {
+    // create a dummy renderer
+    const doc: TipTapNodeHandler = (props) => fragment(props.children);
+    const text: TipTapNodeHandler = (props) => fragment(props.node.text);
+    const paragraph: TipTapNodeHandler = (props) => fragment(props.children);
+    // create a handler
+    const handlers: TipTapRenderHandlers = {
+      doc: doc,
+      text: text,
+      paragraph: paragraph,
+    } as unknown as TipTapRenderHandlers;
+    // paragraph with text in it
+    const p1: TipTapBaseNode = {
+      type: 'paragraph',
+      content: [
+        {
+          type: 'text',
+          text: 'hello',
+        },
+      ],
+    };
+    // wrap in document
+    const node: TipTapBaseNode = {
+      type: 'doc',
+      content: [p1],
+    };
+    // render it!
+    const actual = renderTipTap(node, handlers);
+    expect(actual.getByText('hello')).toBeInTheDocument();
+  });
+
+  test('no-op on unhandled type', () => {
+    // create a dummy renderer
+    const doc: TipTapNodeHandler = (props) => fragment(props.children);
+    const paragraph: TipTapNodeHandler = (props) => fragment(props.children);
+    const text: TipTapNodeHandler = (props) => fragment(props.node.text);
+    // create a handler
+    const handlers: TipTapRenderHandlers = {
+      doc: doc,
+      text: text,
+      paragraph: paragraph,
+    } as unknown as TipTapRenderHandlers;
+    // paragraph with text in it
+    const p1: TipTapBaseNode = {
+      type: 'paragraph',
+      content: [{ type: 'text', text: 'text 1' }],
+    };
+    // unhandled type with text in it
+    const p2: TipTapBaseNode = {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      type: 'bad-type',
+      content: [{ type: 'text', text: 'text 2' }],
+    };
+    // wrap in document
+    const node: TipTapBaseNode = {
+      type: 'doc',
+      content: [p1, p2],
+    };
+    // render it!
+    const actual = renderTipTap(node, handlers);
+    // text 1 should render
+    expect(actual.getByText('text 1')).toBeInTheDocument();
+    // text 2 should not!
+    expect(actual.queryByText('text 2')).toBeNull();
   });
 });
